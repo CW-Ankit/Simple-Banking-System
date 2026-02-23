@@ -1,15 +1,5 @@
 import EmptyState from '../components/EmptyState';
 
-<<<<<<< HEAD
-=======
-function accountLabel(account) {
-  if (!account) return '-';
-  if (typeof account === 'string') return account;
-
-  return account.userName || account.userEmail || account._id || '-';
-}
-
->>>>>>> c1a4beb3d2eda78b35b34ac0d2f992b54be6aecc
 export default function TransactionsPage({ transactions }) {
   return (
     <div className="stack-md">
@@ -34,7 +24,6 @@ export default function TransactionsPage({ transactions }) {
               </tr>
             </thead>
             <tbody>
-<<<<<<< HEAD
               {transactions.map((item) => (
                 <tr key={item._id}>
                   <td>{item._id}</td>
@@ -47,24 +36,6 @@ export default function TransactionsPage({ transactions }) {
                   <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
                 </tr>
               ))}
-=======
-              {transactions.map((item) => {
-                const status = (item.status || 'pending').toLowerCase();
-
-                return (
-                  <tr key={item._id}>
-                    <td>{item._id}</td>
-                    <td>{accountLabel(item.fromAccount)}</td>
-                    <td>{accountLabel(item.toAccount)}</td>
-                    <td>
-                      <span className={`badge badge--${status}`}>{status}</span>
-                    </td>
-                    <td>${Number(item.amount || 0).toFixed(2)}</td>
-                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
-                  </tr>
-                );
-              })}
->>>>>>> c1a4beb3d2eda78b35b34ac0d2f992b54be6aecc
             </tbody>
           </table>
         </div>

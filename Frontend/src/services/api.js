@@ -45,35 +45,7 @@ export function authApi() {
 
 export function bankingApi() {
   return {
-<<<<<<< HEAD
     getAccounts: () => request('/api/accounts'),
-=======
-    getAccounts: ({ all = false, search = '' } = {}) => {
-      const params = new URLSearchParams();
-      if (all) params.set('all', 'true');
-      if (search) params.set('search', search);
-      const query = params.toString() ? `?${params.toString()}` : '';
-      return request(`/api/accounts${query}`);
-    },
-    getTransferTargets: (search = '') => {
-      const query = search ? `?search=${encodeURIComponent(search)}` : '';
-      return request(`/api/accounts/transfer-targets${query}`);
-    },
-    createAccount: (payload) =>
-      request('/api/accounts', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }),
-    updateAccount: (accountId, payload) =>
-      request(`/api/accounts/${accountId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      }),
-    deleteAccount: (accountId) =>
-      request(`/api/accounts/${accountId}`, {
-        method: 'DELETE',
-      }),
->>>>>>> c1a4beb3d2eda78b35b34ac0d2f992b54be6aecc
     getTransactions: () => request('/api/transactions'),
     getBalance: (accountId) => request(`/api/accounts/${accountId}/balance`),
     createTransfer: (payload) =>
@@ -88,29 +60,3 @@ export function bankingApi() {
       }),
   };
 }
-<<<<<<< HEAD
-=======
-
-export function adminApi() {
-  return {
-    getUsers: (search = '') => {
-      const query = search ? `?search=${encodeURIComponent(search)}` : '';
-      return request(`/api/admin/users${query}`);
-    },
-    createUser: (payload) =>
-      request('/api/admin/users', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }),
-    updateUser: (userId, payload) =>
-      request(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      }),
-    deleteUser: (userId) =>
-      request(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-      }),
-  };
-}
->>>>>>> c1a4beb3d2eda78b35b34ac0d2f992b54be6aecc

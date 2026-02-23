@@ -7,13 +7,8 @@ export default function OverviewPage({ accounts, balances, transactions, isRefre
     const knownBalances = Object.values(balances).filter((value) => typeof value === 'number');
     const totalBalance = knownBalances.reduce((sum, value) => sum + value, 0);
 
-<<<<<<< HEAD
     const completed = transactions.filter((item) => item.status === 'completed').length;
     const pending = transactions.filter((item) => item.status === 'pending').length;
-=======
-    const completed = transactions.filter((item) => (item.status || '').toLowerCase() === 'complete').length;
-    const pending = transactions.filter((item) => (item.status || '').toLowerCase() === 'pending').length;
->>>>>>> c1a4beb3d2eda78b35b34ac0d2f992b54be6aecc
 
     return { totalBalance, completed, pending };
   }, [balances, transactions]);
@@ -60,11 +55,7 @@ export default function OverviewPage({ accounts, balances, transactions, isRefre
                   <tr key={item._id}>
                     <td>{item._id}</td>
                     <td>
-<<<<<<< HEAD
                       <span className={`badge badge--${item.status || 'pending'}`}>{item.status || 'unknown'}</span>
-=======
-                      {(() => { const status = (item.status || 'pending').toLowerCase(); return <span className={`badge badge--${status}`}>{status}</span>; })()}
->>>>>>> c1a4beb3d2eda78b35b34ac0d2f992b54be6aecc
                     </td>
                     <td>${Number(item.amount || 0).toFixed(2)}</td>
                     <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
