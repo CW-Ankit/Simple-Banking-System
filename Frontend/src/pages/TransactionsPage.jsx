@@ -4,7 +4,7 @@ function accountLabel(account) {
   if (!account) return '-';
   if (typeof account === 'string') return account;
 
-  return account.userName || account.userEmail || account._id || '-';
+  return account.userName || account.userEmail || account.accountNumber || account._id || '-';
 }
 
 export default function TransactionsPage({ transactions }) {

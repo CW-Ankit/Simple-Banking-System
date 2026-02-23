@@ -8,6 +8,13 @@ const accountSchema = new mongoose.Schema({
         required: [true, "account must be associated with a user"],
         index: true,
     },
+    accountNumber: {
+        type: String,
+        trim: true,
+        unique: true,
+        sparse: true,
+        index: true,
+    },
     name: {
         type: String,
         trim: true,

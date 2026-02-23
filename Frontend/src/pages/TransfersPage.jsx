@@ -5,11 +5,13 @@ function createIdempotencyKey(prefix) {
 }
 
 function sourceLabel(account) {
-  return `${account.name || 'Account'} (${account._id})`;
+  const accountNo = account.accountNumber || account._id;
+  return `${account.name || 'Account'} (${accountNo})`;
 }
 
 function recipientLabel(account) {
-  return `${account.userName || account.userEmail || 'User'} • ${account.name || 'Account'} • ${account._id}`;
+  const accountNo = account.accountNumber || account._id;
+  return `${account.userName || account.userEmail || 'User'} • ${account.name || 'Account'} • ${accountNo}`;
 }
 
 export default function TransfersPage({
@@ -59,17 +61,19 @@ export default function TransfersPage({
 
     setFundForm((prev) => ({
       ...prev,
-      toAccount: prev.toAccount || recipientAccounts[0]?._id || '',
+      toAccount: prev.toAccount || (recipientAccounts[0]?.accountNumber || recipientAccounts[0]?._id || ''),
     }));
   }, [sourceAccounts, recipientAccounts]);
 
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const submitTransfer = async (event) => {
     event.preventDefault();
     setBusy('transfer');
     setMessage('');
+    setError('');
 
     try {
       await createTransfer({
@@ -82,6 +86,8 @@ export default function TransfersPage({
       setToAccountInput('');
       setMessage('Transfer submitted successfully.');
       onSuccess();
+    } catch (submitError) {
+      setError(submitError.message || 'Unable to complete transfer.');
     } finally {
       setBusy('');
     }
@@ -91,6 +97,7 @@ export default function TransfersPage({
     event.preventDefault();
     setBusy('funds');
     setMessage('');
+    setError('');
 
     try {
       await createInitialFunds({
@@ -101,6 +108,8 @@ export default function TransfersPage({
       setFundForm((prev) => ({ ...prev, amount: '' }));
       setMessage('Initial funds request submitted.');
       onSuccess();
+    } catch (submitError) {
+      setError(submitError.message || 'Unable to add initial funds.');
     } finally {
       setBusy('');
     }
@@ -133,9 +142,9 @@ export default function TransfersPage({
             </thead>
             <tbody>
               {recipientAccounts.slice(0, 8).map((account) => (
-                <tr key={account._id} onClick={() => setToAccountInput(account._id)}>
+                <tr key={account._id} onClick={() => setToAccountInput(account.accountNumber || account._id)}>
                   <td>{account.userName || account.userEmail} • {account.name}</td>
-                  <td>{account._id}</td>
+                  <td>{account.accountNumber || account._id}</td>
                 </tr>
               ))}
             </tbody>
@@ -144,6 +153,7 @@ export default function TransfersPage({
       </div>
 
       {message ? <div className="alert alert--success">{message}</div> : null}
+      {error ? <div className="alert alert--error">{error}</div> : null}
 
       <div className="two-col-grid">
         <form className="form-card" onSubmit={submitTransfer}>
@@ -203,7 +213,7 @@ export default function TransfersPage({
                 onChange={(event) => setFundForm((prev) => ({ ...prev, toAccount: event.target.value }))}
               >
                 {recipientAccounts.map((account) => (
-                  <option key={account._id} value={account._id}>
+                  <option key={account._id} value={account.accountNumber || account._id}>
                     {recipientLabel(account)}
                   </option>
                 ))}

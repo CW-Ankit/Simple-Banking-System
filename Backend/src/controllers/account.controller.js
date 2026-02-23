@@ -2,19 +2,51 @@ const accountModel = require("../models/account.model")
 const userModel = require("../models/user.model")
 const mongoose = require("mongoose")
 
+function generateAccountNumber() {
+    const partA = Math.floor(100000 + Math.random() * 900000)
+    const partB = Date.now().toString().slice(-6)
+    return `${partA}${partB}`
+}
+
+async function assignAccountNumberIfMissing(accountDoc) {
+    if (accountDoc.accountNumber) {
+        return accountDoc
+    }
+
+    let attempts = 0
+    while (attempts < 5) {
+        try {
+            accountDoc.accountNumber = generateAccountNumber()
+            await accountDoc.save()
+            return accountDoc
+        } catch (error) {
+            if (error?.code !== 11000) {
+                throw error
+            }
+            attempts += 1
+        }
+    }
+
+    throw new Error("Unable to generate unique account number")
+}
+
 function formatAccount(accountDoc) {
     const account = accountDoc.toObject ? accountDoc.toObject() : accountDoc
 
     if (account.user && typeof account.user === "object") {
         return {
             ...account,
+            accountNumber: account.accountNumber || account._id?.toString(),
             userId: account.user._id,
             userName: account.user.name,
             userEmail: account.user.email,
         }
     }
 
-    return account
+    return {
+        ...account,
+        accountNumber: account.accountNumber || account._id?.toString(),
+    }
 }
 
 async function createAccountController(req, res) {
@@ -27,12 +59,13 @@ async function createAccountController(req, res) {
         return res.status(404).json({ message: "Owner user not found" })
     }
 
-    const account = await accountModel.create({
+    let account = await accountModel.create({
         user: ownerId,
         name: name?.trim() || "Primary Account",
         currency: currency || "INR",
     })
 
+    account = await assignAccountNumberIfMissing(account)
     const populatedAccount = await accountModel.findById(account._id).populate("user", "name email")
 
     res.status(201).json({
@@ -50,6 +83,10 @@ async function getUserAccountController(req, res) {
         .find(filter)
         .populate("user", "name email")
 
+    for (const account of accounts) {
+        await assignAccountNumberIfMissing(account)
+    }
+
     const searchText = search.trim().toLowerCase()
     const mapped = accounts.map(formatAccount)
 
@@ -59,6 +96,7 @@ async function getUserAccountController(req, res) {
                 account.name,
                 account.userName,
                 account.userEmail,
+                account.accountNumber,
                 account._id?.toString(),
             ]
                 .filter(Boolean)
@@ -76,6 +114,10 @@ async function getTransferTargetsController(req, res) {
 
     const allActiveAccounts = await accountModel.find({ status: "ACTIVE" }).populate("user", "name email")
 
+    for (const account of allActiveAccounts) {
+        await assignAccountNumberIfMissing(account)
+    }
+
     const myAccountIds = new Set(
         (await accountModel.find({ user: req.user._id }).select("_id")).map((account) => account._id.toString())
     )
@@ -88,7 +130,7 @@ async function getTransferTargetsController(req, res) {
     const searchText = search.trim().toLowerCase()
     const filtered = searchText
         ? visible.filter((account) => {
-            return [account.name, account.userName, account.userEmail, account._id?.toString()]
+            return [account.name, account.userName, account.userEmail, account.accountNumber, account._id?.toString()]
                 .filter(Boolean)
                 .some((item) => item.toLowerCase().includes(searchText))
         })

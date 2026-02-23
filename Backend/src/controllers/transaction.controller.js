@@ -14,6 +14,7 @@ function buildAccountSummary(account) {
 
     return {
         _id: normalized._id,
+        accountNumber: normalized.accountNumber || normalized._id?.toString(),
         status: normalized.status,
         currency: normalized.currency,
         userId: user ? user._id : normalized.user,
@@ -21,6 +22,20 @@ function buildAccountSummary(account) {
         userEmail: user ? user.email : undefined,
         name: normalized.name,
     }
+}
+
+async function findAccountByNumberOrId(accountInput) {
+    if (!accountInput) return null
+
+    let account = await accountModel.findOne({ accountNumber: accountInput }).populate("user", "name email")
+    if (account) return account
+
+    if (mongoose.isValidObjectId(accountInput)) {
+        account = await accountModel.findById(accountInput).populate("user", "name email")
+        if (account) return account
+    }
+
+    return null
 }
 
 async function getTransactions(req, res) {
@@ -69,9 +84,9 @@ async function getTransactions(req, res) {
 }
 
 async function createTransaction(req, res) {
-    const { fromAccount, toAccount, amount: rawAmount, idempotencyKey } = req.body;
+    const { fromAccount, toAccount: toAccountInput, amount: rawAmount, idempotencyKey } = req.body;
 
-    if (!fromAccount || !toAccount || !rawAmount || !idempotencyKey) {
+    if (!fromAccount || !toAccountInput || !rawAmount || !idempotencyKey) {
         return res.status(400).json({ message: "Missing Fields" });
     }
 
@@ -80,19 +95,19 @@ async function createTransaction(req, res) {
         return res.status(400).json({ message: "Invalid amount" });
     }
 
-    if (fromAccount === toAccount) {
-        return res.status(400).json({ message: "fromAccount and toAccount must be different" });
-    }
-
-    if (!mongoose.isValidObjectId(fromAccount) || !mongoose.isValidObjectId(toAccount)) {
-        return res.status(400).json({ message: "Invalid account number format" });
+    if (!mongoose.isValidObjectId(fromAccount)) {
+        return res.status(400).json({ message: "Invalid sender account" });
     }
 
     const fromUserAccount = await accountModel.findById(fromAccount).populate("user", "name email");
-    const toUserAccount = await accountModel.findById(toAccount).populate("user", "name email");
+    const toUserAccount = await findAccountByNumberOrId(String(toAccountInput).trim());
 
     if (!fromUserAccount || !toUserAccount) {
         return res.status(400).json({ message: "Invalid fromAccount or toAccount" });
+    }
+
+    if (fromUserAccount._id.toString() === toUserAccount._id.toString()) {
+        return res.status(400).json({ message: "fromAccount and toAccount must be different" });
     }
 
     const fromOwnerId = fromUserAccount.user?._id ? fromUserAccount.user._id.toString() : fromUserAccount.user.toString()
@@ -227,16 +242,12 @@ async function createTransaction(req, res) {
 
 
 async function createInitialFunds(req, res) {
-    const { toAccount, amount, idempotencyKey } = req.body
+    const { toAccount: toAccountInput, amount, idempotencyKey } = req.body
 
-    if (!toAccount || !amount || !idempotencyKey) {
+    if (!toAccountInput || !amount || !idempotencyKey) {
         return res.status(400).json({
             message: "Missing Fields"
         })
-    }
-
-    if (!mongoose.isValidObjectId(toAccount)) {
-        return res.status(400).json({ message: "Invalid account number format" })
     }
 
     const existing = await transactionModel.findOne({ idempotencyKey })
@@ -247,9 +258,7 @@ async function createInitialFunds(req, res) {
         })
     }
 
-    const toUserAccount = await accountModel.findOne({
-        _id: toAccount
-    })
+    const toUserAccount = await findAccountByNumberOrId(String(toAccountInput).trim())
 
     if (!toUserAccount) {
         return res.status(400).json({
