@@ -26,17 +26,21 @@ async function getTransactions(req, res) {
     const userAccounts = await accountModel.find({ user: req.user._id }).select("_id")
     const userAccountIds = userAccounts.map((account) => account._id)
 
-    if (!userAccountIds.length) {
+    if (!req.user.systemUser && !userAccountIds.length) {
         return res.status(200).json({ transactions: [] })
     }
 
-    const transactions = await transactionModel
-        .find({
+    const query = req.user.systemUser
+        ? {}
+        : {
             $or: [
                 { fromAccount: { $in: userAccountIds } },
                 { toAccount: { $in: userAccountIds } },
             ],
-        })
+        }
+
+    const transactions = await transactionModel
+        .find(query)
         .sort({ createdAt: -1 })
         .lean()
 
@@ -84,6 +88,10 @@ async function createTransaction(req, res) {
 
     if (!fromUserAccount || !toUserAccount) {
         return res.status(400).json({ message: "Invalid fromAccount or toAccount" });
+    }
+
+    if (!req.user.systemUser && fromUserAccount.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "You can only transfer funds from your own account" });
     }
 
     const existing = await transactionModel.findOne({ idempotencyKey });

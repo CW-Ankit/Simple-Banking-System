@@ -1,10 +1,26 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 function createIdempotencyKey(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 }
 
-export default function TransfersPage({ accounts, createTransfer, createInitialFunds, onSuccess }) {
+function accountOptionLabel(account) {
+  return `${account.name || 'Account'} • ${account.userName || account.userEmail || account._id}`;
+}
+
+export default function TransfersPage({ accounts, createTransfer, createInitialFunds, onSuccess, isSystemUser }) {
+  const [search, setSearch] = useState('');
+  const filteredAccounts = useMemo(() => {
+    const text = search.trim().toLowerCase();
+    if (!text) return accounts;
+
+    return accounts.filter((account) =>
+      [account.name, account.userName, account.userEmail, account._id]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(text)),
+    );
+  }, [accounts, search]);
+
   const [transferForm, setTransferForm] = useState({
     fromAccount: accounts[0]?._id || '',
     toAccount: accounts[1]?._id || accounts[0]?._id || '',
@@ -66,6 +82,18 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
         </div>
       </div>
 
+      {isSystemUser ? (
+        <div className="form-card">
+          <h3>Search all accounts</h3>
+          <input
+            placeholder="Search by account name, user name or email"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <p className="sidebar__subtext">{filteredAccounts.length} matching account(s)</p>
+        </div>
+      ) : null}
+
       {message ? <div className="alert alert--success">{message}</div> : null}
 
       <div className="two-col-grid">
@@ -81,9 +109,9 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
                 setTransferForm((prev) => ({ ...prev, fromAccount: event.target.value }))
               }
             >
-              {accounts.map((account) => (
+              {filteredAccounts.map((account) => (
                 <option key={account._id} value={account._id}>
-                  {account._id}
+                  {accountOptionLabel(account)}
                 </option>
               ))}
             </select>
@@ -96,9 +124,9 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
               value={transferForm.toAccount}
               onChange={(event) => setTransferForm((prev) => ({ ...prev, toAccount: event.target.value }))}
             >
-              {accounts.map((account) => (
+              {filteredAccounts.map((account) => (
                 <option key={account._id} value={account._id}>
-                  {account._id}
+                  {accountOptionLabel(account)}
                 </option>
               ))}
             </select>
@@ -131,9 +159,9 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
               value={fundForm.toAccount}
               onChange={(event) => setFundForm((prev) => ({ ...prev, toAccount: event.target.value }))}
             >
-              {accounts.map((account) => (
+              {filteredAccounts.map((account) => (
                 <option key={account._id} value={account._id}>
-                  {account._id}
+                  {accountOptionLabel(account)}
                 </option>
               ))}
             </select>
