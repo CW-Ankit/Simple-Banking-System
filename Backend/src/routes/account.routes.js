@@ -6,6 +6,7 @@ const router = express.Router()
 
 router.post("/", authMiddleware.authMiddleware, accountController.createAccountController)
 router.get("/", authMiddleware.authMiddleware, accountController.getUserAccountController)
+router.get("/transfer-targets", authMiddleware.authMiddleware, accountController.getTransferTargetsController)
 router.patch("/:accountId", authMiddleware.authMiddleware, accountController.updateAccountController)
 router.delete("/:accountId", authMiddleware.authMiddleware, accountController.deleteAccountController)
 

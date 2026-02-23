@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
-export default function AdminUsersPage({ users, onCreateUser, onUpdateUser, onDeleteUser }) {
+export default function AdminUsersPage({ users, onCreateUser, onUpdateUser, onDeleteUser, onSearchUsers }) {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [search, setSearch] = useState('');
 
   const submit = async (event) => {
     event.preventDefault();
@@ -13,6 +14,11 @@ export default function AdminUsersPage({ users, onCreateUser, onUpdateUser, onDe
     const name = window.prompt('New name', user.name);
     if (!name) return;
     await onUpdateUser(user._id, { name });
+  };
+
+  const onSearchChange = async (value) => {
+    setSearch(value);
+    await onSearchUsers(value);
   };
 
   return (
@@ -34,6 +40,15 @@ export default function AdminUsersPage({ users, onCreateUser, onUpdateUser, onDe
         </label>
         <button type="submit">Create user</button>
       </form>
+
+      <div className="form-card">
+        <h3>Find users</h3>
+        <input
+          value={search}
+          placeholder="Search by name or email"
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+      </div>
 
       <div className="table-wrap">
         <table>

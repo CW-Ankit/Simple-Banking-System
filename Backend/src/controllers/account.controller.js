@@ -70,6 +70,32 @@ async function getUserAccountController(req, res) {
     })
 }
 
+async function getTransferTargetsController(req, res) {
+    const { search = "" } = req.query
+
+    const allActiveAccounts = await accountModel.find({ status: "ACTIVE" }).populate("user", "name email")
+
+    const myAccountIds = new Set(
+        (await accountModel.find({ user: req.user._id }).select("_id")).map((account) => account._id.toString())
+    )
+
+    const mapped = allActiveAccounts.map(formatAccount)
+    const visible = req.user.systemUser
+        ? mapped
+        : mapped.filter((account) => !myAccountIds.has(account._id.toString()))
+
+    const searchText = search.trim().toLowerCase()
+    const filtered = searchText
+        ? visible.filter((account) => {
+            return [account.name, account.userName, account.userEmail, account._id?.toString()]
+                .filter(Boolean)
+                .some((item) => item.toLowerCase().includes(searchText))
+        })
+        : visible
+
+    return res.status(200).json({ accounts: filtered })
+}
+
 async function updateAccountController(req, res) {
     const { accountId } = req.params
     const { name, status } = req.body
@@ -141,6 +167,7 @@ async function getBalanceController(req, res) {
 module.exports = {
     createAccountController,
     getUserAccountController,
+    getTransferTargetsController,
     updateAccountController,
     deleteAccountController,
     getBalanceController

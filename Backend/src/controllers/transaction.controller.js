@@ -19,6 +19,7 @@ function buildAccountSummary(account) {
         userId: user ? user._id : normalized.user,
         userName: user ? user.name : undefined,
         userEmail: user ? user.email : undefined,
+        name: normalized.name,
     }
 }
 
@@ -90,7 +91,8 @@ async function createTransaction(req, res) {
         return res.status(400).json({ message: "Invalid fromAccount or toAccount" });
     }
 
-    if (!req.user.systemUser && fromUserAccount.user.toString() !== req.user._id.toString()) {
+    const fromOwnerId = fromUserAccount.user?._id ? fromUserAccount.user._id.toString() : fromUserAccount.user.toString()
+    if (!req.user.systemUser && fromOwnerId !== req.user._id.toString()) {
         return res.status(403).json({ message: "You can only transfer funds from your own account" });
     }
 
@@ -226,6 +228,14 @@ async function createInitialFunds(req, res) {
     if (!toAccount || !amount || !idempotencyKey) {
         return res.status(400).json({
             message: "Missing Fields"
+        })
+    }
+
+    const existing = await transactionModel.findOne({ idempotencyKey })
+    if (existing) {
+        return res.status(200).json({
+            message: "Initial funds transaction already processed",
+            transaction: existing,
         })
     }
 

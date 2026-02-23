@@ -4,14 +4,19 @@ const accountModel = require("../models/account.model")
 async function listUsersController(req, res) {
     const { search = "" } = req.query
 
-    const users = await userModel.find().select("name email createdAt")
-    const text = search.trim().toLowerCase()
+    const text = search.trim()
+    const filter = text
+        ? {
+            $or: [
+                { name: { $regex: text, $options: "i" } },
+                { email: { $regex: text, $options: "i" } },
+            ],
+        }
+        : {}
 
-    const filtered = text
-        ? users.filter((user) => [user.name, user.email].some((value) => value.toLowerCase().includes(text)))
-        : users
+    const users = await userModel.find(filter).select("name email createdAt")
 
-    res.status(200).json({ users: filtered })
+    res.status(200).json({ users })
 }
 
 async function createUserController(req, res) {

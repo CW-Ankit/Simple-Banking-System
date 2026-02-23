@@ -3,13 +3,13 @@ const mongoose = require("mongoose")
 const transactionSchema = new mongoose.Schema({
     fromAccount: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Account",
+        ref: "account",
         required: [true, "transaction must be taken place from an account"],
         index: true,
     },
     toAccount: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Account",
+        ref: "account",
         required: [true, "transaction must end to an account"],
         index: true,
     },
