@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -8,20 +9,65 @@ import AccountsPage from './pages/AccountsPage';
 import TransfersPage from './pages/TransfersPage';
 import TransactionsPage from './pages/TransactionsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import AdminUsersPage from './pages/AdminUsersPage';
 import { useBankingData } from './hooks/useBankingData';
-import { bankingApi } from './services/api';
+import { adminApi, bankingApi } from './services/api';
 
 function DashboardRoutes() {
-  const { isAuthenticated } = useAuth();
-  const { accounts, transactions, balances, isRefreshing, error, refresh } = useBankingData(isAuthenticated);
-  const api = bankingApi();
+  const { isAuthenticated, isSystemUser } = useAuth();
+  const { accounts, transactions, balances, isRefreshing, error, refresh } = useBankingData(isAuthenticated, isSystemUser);
+  const bankApi = useMemo(() => bankingApi(), []);
+  const admApi = useMemo(() => adminApi(), []);
+
+  const [users, setUsers] = useState([]);
+
+  const loadUsers = async () => {
+    if (!isSystemUser) return;
+    const response = await admApi.getUsers();
+    setUsers(response.users || []);
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, [isSystemUser]);
 
   const createTransfer = async (payload) => {
-    await api.createTransfer(payload);
+    await bankApi.createTransfer(payload);
   };
 
   const createInitialFunds = async (payload) => {
-    await api.createInitialFunds(payload);
+    await bankApi.createInitialFunds(payload);
+  };
+
+  const onCreateAccount = async (payload) => {
+    await bankApi.createAccount(payload);
+    await refresh();
+  };
+
+  const onRenameAccount = async (accountId, name) => {
+    await bankApi.updateAccount(accountId, { name });
+    await refresh();
+  };
+
+  const onDeleteAccount = async (accountId) => {
+    await bankApi.deleteAccount(accountId);
+    await refresh();
+  };
+
+  const onCreateUser = async (payload) => {
+    await admApi.createUser(payload);
+    await loadUsers();
+  };
+
+  const onUpdateUser = async (userId, payload) => {
+    await admApi.updateUser(userId, payload);
+    await loadUsers();
+  };
+
+  const onDeleteUser = async (userId) => {
+    await admApi.deleteUser(userId);
+    await loadUsers();
+    await refresh();
   };
 
   return (
@@ -41,7 +87,20 @@ function DashboardRoutes() {
               />
             }
           />
-          <Route path="accounts" element={<AccountsPage accounts={accounts} balances={balances} />} />
+          <Route
+            path="accounts"
+            element={
+              <AccountsPage
+                accounts={accounts}
+                balances={balances}
+                onCreateAccount={onCreateAccount}
+                onRenameAccount={onRenameAccount}
+                onDeleteAccount={onDeleteAccount}
+                isSystemUser={isSystemUser}
+                users={users}
+              />
+            }
+          />
           <Route
             path="transfers"
             element={
@@ -50,10 +109,26 @@ function DashboardRoutes() {
                 createTransfer={createTransfer}
                 createInitialFunds={createInitialFunds}
                 onSuccess={refresh}
+                isSystemUser={isSystemUser}
               />
             }
           />
           <Route path="transactions" element={<TransactionsPage transactions={transactions} />} />
+          <Route
+            path="admin/users"
+            element={
+              isSystemUser ? (
+                <AdminUsersPage
+                  users={users}
+                  onCreateUser={onCreateUser}
+                  onUpdateUser={onUpdateUser}
+                  onDeleteUser={onDeleteUser}
+                />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
         </Route>
       </Routes>
     </>

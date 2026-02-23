@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { bankingApi } from '../services/api';
 
-export function useBankingData(isAuthenticated) {
+export function useBankingData(isAuthenticated, isSystemUser) {
   const api = useMemo(() => bankingApi(), []);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -17,7 +17,7 @@ export function useBankingData(isAuthenticated) {
 
     try {
       const [accountsResponse, transactionsResponse] = await Promise.all([
-        api.getAccounts(),
+        api.getAccounts({ all: isSystemUser }),
         api.getTransactions(),
       ]);
 
@@ -44,7 +44,7 @@ export function useBankingData(isAuthenticated) {
     } finally {
       setIsRefreshing(false);
     }
-  }, [api, isAuthenticated]);
+  }, [api, isAuthenticated, isSystemUser]);
 
   useEffect(() => {
     refresh();
