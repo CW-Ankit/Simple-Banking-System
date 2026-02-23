@@ -17,7 +17,7 @@ export default function AccountsPage({ accounts, balances }) {
         {accounts.map((account) => (
           <article key={account._id} className="account-card">
             <p className="account-card__id">{account._id}</p>
-            <p className="account-card__owner">{account.ownerName || account.name || 'Primary account'}</p>
+            <p className="account-card__owner">{account.userName || account.ownerName || account.name || 'Primary account'}</p>
             <p className="account-card__balance">
               {typeof balances[account._id] === 'number' ? `$${balances[account._id].toFixed(2)}` : 'Balance unavailable'}
             </p>

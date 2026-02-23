@@ -1,5 +1,19 @@
 const accountModel = require("../models/account.model")
 
+function formatAccount(accountDoc) {
+    const account = accountDoc.toObject ? accountDoc.toObject() : accountDoc
+
+    if (account.user && typeof account.user === "object") {
+        return {
+            ...account,
+            userId: account.user._id,
+            userName: account.user.name,
+            userEmail: account.user.email,
+        }
+    }
+
+    return account
+}
 
 async function createAccountController(req, res) {
     const user = req.user
@@ -8,16 +22,20 @@ async function createAccountController(req, res) {
         user: user._id
     })
 
+    const populatedAccount = await accountModel.findById(account._id).populate("user", "name email")
+
     res.status(201).json({
-        account
+        account: formatAccount(populatedAccount)
     })
 }
 
 async function getUserAccountController(req, res) {
-    const accounts = await accountModel.find({ user: req.user._id });
+    const accounts = await accountModel
+        .find({ user: req.user._id })
+        .populate("user", "name email")
 
     res.status(200).json({
-        accounts
+        accounts: accounts.map(formatAccount)
     })
 }
 

@@ -1,5 +1,12 @@
 import EmptyState from '../components/EmptyState';
 
+function accountLabel(account) {
+  if (!account) return '-';
+  if (typeof account === 'string') return account;
+
+  return account.userName || account.userEmail || account._id || '-';
+}
+
 export default function TransactionsPage({ transactions }) {
   return (
     <div className="stack-md">
@@ -24,18 +31,22 @@ export default function TransactionsPage({ transactions }) {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((item) => (
-                <tr key={item._id}>
-                  <td>{item._id}</td>
-                  <td>{item.fromAccount || '-'}</td>
-                  <td>{item.toAccount || '-'}</td>
-                  <td>
-                    <span className={`badge badge--${item.status || 'pending'}`}>{item.status || 'unknown'}</span>
-                  </td>
-                  <td>${Number(item.amount || 0).toFixed(2)}</td>
-                  <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
-                </tr>
-              ))}
+              {transactions.map((item) => {
+                const status = (item.status || 'pending').toLowerCase();
+
+                return (
+                  <tr key={item._id}>
+                    <td>{item._id}</td>
+                    <td>{accountLabel(item.fromAccount)}</td>
+                    <td>{accountLabel(item.toAccount)}</td>
+                    <td>
+                      <span className={`badge badge--${status}`}>{status}</span>
+                    </td>
+                    <td>${Number(item.amount || 0).toFixed(2)}</td>
+                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

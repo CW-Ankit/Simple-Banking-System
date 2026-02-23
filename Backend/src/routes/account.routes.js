@@ -5,16 +5,15 @@ const accountController = require("../controllers/account.controller")
 const router = express.Router()
 
 // (post) /api/accounts/
-// Protected
-
-router.post("/", authMiddleware.authMiddleware,accountController.createAccountController)
+router.post("/", authMiddleware.authMiddleware, accountController.createAccountController)
 
 // (get) /api/accounts/
-// Protected
+router.get("/", authMiddleware.authMiddleware, accountController.getUserAccountController)
 
-router.get("/",authMiddleware.authMiddleware,accountController.getUserAccountController)
+// preferred: (get) /api/accounts/:accountId/balance
+router.get("/:accountId/balance", authMiddleware.authMiddleware, accountController.getBalanceController)
 
-// (get) /api/accounts/balance/:accountId
-router.get("/balance/:accountId",authMiddleware.authMiddleware, accountController.getBalanceController)
+// backward-compatible: (get) /api/accounts/balance/:accountId
+router.get("/balance/:accountId", authMiddleware.authMiddleware, accountController.getBalanceController)
 
 module.exports = router

@@ -7,8 +7,8 @@ export default function OverviewPage({ accounts, balances, transactions, isRefre
     const knownBalances = Object.values(balances).filter((value) => typeof value === 'number');
     const totalBalance = knownBalances.reduce((sum, value) => sum + value, 0);
 
-    const completed = transactions.filter((item) => item.status === 'completed').length;
-    const pending = transactions.filter((item) => item.status === 'pending').length;
+    const completed = transactions.filter((item) => (item.status || '').toLowerCase() === 'complete').length;
+    const pending = transactions.filter((item) => (item.status || '').toLowerCase() === 'pending').length;
 
     return { totalBalance, completed, pending };
   }, [balances, transactions]);
@@ -55,7 +55,7 @@ export default function OverviewPage({ accounts, balances, transactions, isRefre
                   <tr key={item._id}>
                     <td>{item._id}</td>
                     <td>
-                      <span className={`badge badge--${item.status || 'pending'}`}>{item.status || 'unknown'}</span>
+                      {(() => { const status = (item.status || 'pending').toLowerCase(); return <span className={`badge badge--${status}`}>{status}</span>; })()}
                     </td>
                     <td>${Number(item.amount || 0).toFixed(2)}</td>
                     <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
