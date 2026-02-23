@@ -4,9 +4,22 @@ const ledgerModel = require("../models/ledger.model")
 const accountSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
         required: [true, "account must be associated with a user"],
         index: true,
+    },
+    accountNumber: {
+        type: String,
+        trim: true,
+        unique: true,
+        sparse: true,
+        index: true,
+    },
+    name: {
+        type: String,
+        trim: true,
+        maxlength: [80, "account name must be 80 characters or less"],
+        default: "Primary Account",
     },
     status: {
         type: String,
@@ -28,7 +41,6 @@ const accountSchema = new mongoose.Schema({
 accountSchema.index({ user: 1, status: 1 });
 
 accountSchema.methods.getBalance = async function () {
-
     const balanceData = await ledgerModel.aggregate([
         { $match: { account: this._id } },
         {
@@ -67,7 +79,6 @@ accountSchema.methods.getBalance = async function () {
     }
 
     return balanceData[0].balance
-
 }
 
 const accountModel = mongoose.model("account", accountSchema);

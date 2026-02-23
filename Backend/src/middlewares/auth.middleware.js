@@ -20,7 +20,11 @@ async function authMiddleware(req, res, next) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const user = await userModel.findById(decoded.userId);
+        const user = await userModel.findById(decoded.userId).select("+systemUser");
+
+        if (!user) {
+            return res.status(401).json({ message: "Unauthorized: user not found" })
+        }
 
         req.user = user;
 
@@ -53,6 +57,10 @@ async function authSystemUserMiddleware(req, res, next) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const user = await userModel.findById(decoded.userId).select("+systemUser")
+
+        if (!user) {
+            return res.status(401).json({ message: "Unauthorized: user not found" })
+        }
 
         if (!user.systemUser) {
             return res.status(403).json({
