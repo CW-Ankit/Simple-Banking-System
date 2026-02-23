@@ -324,3 +324,13 @@ td {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
   }
 }
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.row-actions button {
+  padding: 0.45rem 0.7rem;
+}
