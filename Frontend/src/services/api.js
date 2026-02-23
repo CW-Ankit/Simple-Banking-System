@@ -40,6 +40,7 @@ export function authApi() {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+    me: () => request('/api/auth/me'),
   };
 }
 
@@ -51,6 +52,10 @@ export function bankingApi() {
       if (search) params.set('search', search);
       const query = params.toString() ? `?${params.toString()}` : '';
       return request(`/api/accounts${query}`);
+    },
+    getTransferTargets: (search = '') => {
+      const query = search ? `?search=${encodeURIComponent(search)}` : '';
+      return request(`/api/accounts/transfer-targets${query}`);
     },
     createAccount: (payload) =>
       request('/api/accounts', {

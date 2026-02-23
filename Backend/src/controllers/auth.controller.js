@@ -73,6 +73,19 @@ async function userLoginController(req, res) {
 
 }
 
+async function meController(req, res) {
+    const user = req.user
+
+    return res.status(200).json({
+        user: {
+            _id: user._id,
+            email: user.email,
+            name: user.name,
+            systemUser: Boolean(user.systemUser),
+        }
+    })
+}
+
 async function userLogoutController(req, res) {
     const token = req.cookies.token || req.headers.authorization?.split(" ")[1]
     if (!token) {
@@ -93,5 +106,6 @@ async function userLogoutController(req, res) {
 module.exports = {
     userRegisterController,
     userLoginController,
+    meController,
     userLogoutController,
 }

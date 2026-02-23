@@ -84,6 +84,10 @@ async function createTransaction(req, res) {
         return res.status(400).json({ message: "fromAccount and toAccount must be different" });
     }
 
+    if (!mongoose.isValidObjectId(fromAccount) || !mongoose.isValidObjectId(toAccount)) {
+        return res.status(400).json({ message: "Invalid account number format" });
+    }
+
     const fromUserAccount = await accountModel.findById(fromAccount).populate("user", "name email");
     const toUserAccount = await accountModel.findById(toAccount).populate("user", "name email");
 
@@ -229,6 +233,10 @@ async function createInitialFunds(req, res) {
         return res.status(400).json({
             message: "Missing Fields"
         })
+    }
+
+    if (!mongoose.isValidObjectId(toAccount)) {
+        return res.status(400).json({ message: "Invalid account number format" })
     }
 
     const existing = await transactionModel.findOne({ idempotencyKey })

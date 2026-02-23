@@ -1,5 +1,6 @@
 const accountModel = require("../models/account.model")
 const userModel = require("../models/user.model")
+const mongoose = require("mongoose")
 
 function formatAccount(accountDoc) {
     const account = accountDoc.toObject ? accountDoc.toObject() : accountDoc
@@ -143,6 +144,10 @@ async function deleteAccountController(req, res) {
 
 async function getBalanceController(req, res) {
     const { accountId } = req.params
+
+    if (!mongoose.isValidObjectId(accountId)) {
+        return res.status(400).json({ message: "Invalid account number format" })
+    }
 
     const filter = req.user.systemUser
         ? { _id: accountId }

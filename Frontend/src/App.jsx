@@ -14,16 +14,16 @@ import { useBankingData } from './hooks/useBankingData';
 import { adminApi, bankingApi } from './services/api';
 
 function DashboardRoutes() {
-  const { isAuthenticated, isSystemUser } = useAuth();
-  const { accounts, transactions, balances, isRefreshing, error, refresh } = useBankingData(isAuthenticated, isSystemUser);
+  const { isAuthenticated, isSystemUser, userId } = useAuth();
+  const { accounts, transferTargets, transactions, balances, isRefreshing, error, refresh, searchTransferTargets } = useBankingData(isAuthenticated, isSystemUser);
   const bankApi = useMemo(() => bankingApi(), []);
   const admApi = useMemo(() => adminApi(), []);
 
   const [users, setUsers] = useState([]);
 
-  const loadUsers = async () => {
+  const loadUsers = async (search = "") => {
     if (!isSystemUser) return;
-    const response = await admApi.getUsers();
+    const response = await admApi.getUsers(search);
     setUsers(response.users || []);
   };
 
@@ -70,6 +70,10 @@ function DashboardRoutes() {
     await refresh();
   };
 
+  const sourceAccounts = isSystemUser
+    ? accounts.filter((account) => String(account.userId) === String(userId))
+    : accounts;
+
   return (
     <>
       {error ? <div className="global-alert">{error}</div> : null}
@@ -105,11 +109,13 @@ function DashboardRoutes() {
             path="transfers"
             element={
               <TransfersPage
-                accounts={accounts}
+                sourceAccounts={sourceAccounts}
+                targetAccounts={transferTargets}
                 createTransfer={createTransfer}
                 createInitialFunds={createInitialFunds}
                 onSuccess={refresh}
                 isSystemUser={isSystemUser}
+                onSearchTargets={searchTransferTargets}
               />
             }
           />
@@ -123,6 +129,7 @@ function DashboardRoutes() {
                   onCreateUser={onCreateUser}
                   onUpdateUser={onUpdateUser}
                   onDeleteUser={onDeleteUser}
+                  onSearchUsers={loadUsers}
                 />
               ) : (
                 <Navigate to="/dashboard" replace />

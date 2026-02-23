@@ -1,36 +1,67 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 function createIdempotencyKey(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 }
 
-function accountOptionLabel(account) {
-  return `${account.name || 'Account'} • ${account.userName || account.userEmail || account._id}`;
+function sourceLabel(account) {
+  return `${account.name || 'Account'} (${account._id})`;
 }
 
-export default function TransfersPage({ accounts, createTransfer, createInitialFunds, onSuccess, isSystemUser }) {
-  const [search, setSearch] = useState('');
-  const filteredAccounts = useMemo(() => {
-    const text = search.trim().toLowerCase();
-    if (!text) return accounts;
+function recipientLabel(account) {
+  return `${account.userName || account.userEmail || 'User'} • ${account.name || 'Account'} • ${account._id}`;
+}
 
-    return accounts.filter((account) =>
-      [account.name, account.userName, account.userEmail, account._id]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(text)),
-    );
-  }, [accounts, search]);
+export default function TransfersPage({
+  sourceAccounts,
+  targetAccounts,
+  createTransfer,
+  createInitialFunds,
+  onSuccess,
+  isSystemUser,
+  onSearchTargets,
+}) {
+  const [search, setSearch] = useState('');
+  const [toAccountInput, setToAccountInput] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearchTargets(search);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [search, onSearchTargets]);
+
+  const recipientAccounts = useMemo(() => {
+    if (isSystemUser) {
+      return targetAccounts;
+    }
+
+    const myIds = new Set(sourceAccounts.map((account) => account._id));
+    return targetAccounts.filter((account) => !myIds.has(account._id));
+  }, [isSystemUser, sourceAccounts, targetAccounts]);
 
   const [transferForm, setTransferForm] = useState({
-    fromAccount: accounts[0]?._id || '',
-    toAccount: accounts[1]?._id || accounts[0]?._id || '',
+    fromAccount: '',
     amount: '',
   });
 
   const [fundForm, setFundForm] = useState({
-    toAccount: accounts[0]?._id || '',
+    toAccount: '',
     amount: '',
   });
+
+  useEffect(() => {
+    setTransferForm((prev) => ({
+      ...prev,
+      fromAccount: prev.fromAccount || sourceAccounts[0]?._id || '',
+    }));
+
+    setFundForm((prev) => ({
+      ...prev,
+      toAccount: prev.toAccount || recipientAccounts[0]?._id || '',
+    }));
+  }, [sourceAccounts, recipientAccounts]);
 
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
@@ -42,11 +73,13 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
 
     try {
       await createTransfer({
-        ...transferForm,
+        fromAccount: transferForm.fromAccount,
+        toAccount: toAccountInput.trim(),
         amount: Number(transferForm.amount),
         idempotencyKey: createIdempotencyKey('transfer'),
       });
       setTransferForm((prev) => ({ ...prev, amount: '' }));
+      setToAccountInput('');
       setMessage('Transfer submitted successfully.');
       onSuccess();
     } finally {
@@ -78,21 +111,37 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
       <div className="section-header">
         <div>
           <h2>Transfer center</h2>
-          <p>Initiate money movement with idempotent requests.</p>
+          <p>Transfer funds from one of your accounts to another account number.</p>
         </div>
       </div>
 
-      {isSystemUser ? (
-        <div className="form-card">
-          <h3>Search all accounts</h3>
-          <input
-            placeholder="Search by account name, user name or email"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <p className="sidebar__subtext">{filteredAccounts.length} matching account(s)</p>
+      <div className="form-card">
+        <h3>{isSystemUser ? 'Search all accounts' : 'Find recipients'}</h3>
+        <input
+          placeholder="Search by account name, user name or email"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <p className="sidebar__subtext">{recipientAccounts.length} matching recipient account(s)</p>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Recipient</th>
+                <th>Account Number</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recipientAccounts.slice(0, 8).map((account) => (
+                <tr key={account._id} onClick={() => setToAccountInput(account._id)}>
+                  <td>{account.userName || account.userEmail} • {account.name}</td>
+                  <td>{account._id}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ) : null}
+      </div>
 
       {message ? <div className="alert alert--success">{message}</div> : null}
 
@@ -105,31 +154,24 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
             <select
               required
               value={transferForm.fromAccount}
-              onChange={(event) =>
-                setTransferForm((prev) => ({ ...prev, fromAccount: event.target.value }))
-              }
+              onChange={(event) => setTransferForm((prev) => ({ ...prev, fromAccount: event.target.value }))}
             >
-              {filteredAccounts.map((account) => (
+              {sourceAccounts.map((account) => (
                 <option key={account._id} value={account._id}>
-                  {accountOptionLabel(account)}
+                  {sourceLabel(account)}
                 </option>
               ))}
             </select>
           </label>
 
           <label>
-            To account
-            <select
+            To account number
+            <input
               required
-              value={transferForm.toAccount}
-              onChange={(event) => setTransferForm((prev) => ({ ...prev, toAccount: event.target.value }))}
-            >
-              {filteredAccounts.map((account) => (
-                <option key={account._id} value={account._id}>
-                  {accountOptionLabel(account)}
-                </option>
-              ))}
-            </select>
+              value={toAccountInput}
+              onChange={(event) => setToAccountInput(event.target.value)}
+              placeholder="Enter recipient account number"
+            />
           </label>
 
           <label>
@@ -144,45 +186,47 @@ export default function TransfersPage({ accounts, createTransfer, createInitialF
             />
           </label>
 
-          <button type="submit" disabled={busy === 'transfer'}>
+          <button type="submit" disabled={busy === 'transfer' || !sourceAccounts.length}>
             {busy === 'transfer' ? 'Submitting...' : 'Submit transfer'}
           </button>
         </form>
 
-        <form className="form-card" onSubmit={submitInitialFunds}>
-          <h3>Add initial funds</h3>
+        {isSystemUser ? (
+          <form className="form-card" onSubmit={submitInitialFunds}>
+            <h3>Add initial funds</h3>
 
-          <label>
-            To account
-            <select
-              required
-              value={fundForm.toAccount}
-              onChange={(event) => setFundForm((prev) => ({ ...prev, toAccount: event.target.value }))}
-            >
-              {filteredAccounts.map((account) => (
-                <option key={account._id} value={account._id}>
-                  {accountOptionLabel(account)}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label>
+              To account
+              <select
+                required
+                value={fundForm.toAccount}
+                onChange={(event) => setFundForm((prev) => ({ ...prev, toAccount: event.target.value }))}
+              >
+                {recipientAccounts.map((account) => (
+                  <option key={account._id} value={account._id}>
+                    {recipientLabel(account)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label>
-            Amount
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              value={fundForm.amount}
-              onChange={(event) => setFundForm((prev) => ({ ...prev, amount: event.target.value }))}
-            />
-          </label>
+            <label>
+              Amount
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={fundForm.amount}
+                onChange={(event) => setFundForm((prev) => ({ ...prev, amount: event.target.value }))}
+              />
+            </label>
 
-          <button type="submit" disabled={busy === 'funds'}>
-            {busy === 'funds' ? 'Submitting...' : 'Add funds'}
-          </button>
-        </form>
+            <button type="submit" disabled={busy === 'funds'}>
+              {busy === 'funds' ? 'Submitting...' : 'Add funds'}
+            </button>
+          </form>
+        ) : null}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { bankingApi } from '../services/api';
 export function useBankingData(isAuthenticated, isSystemUser) {
   const api = useMemo(() => bankingApi(), []);
   const [accounts, setAccounts] = useState([]);
+  const [transferTargets, setTransferTargets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [balances, setBalances] = useState({});
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -16,15 +17,18 @@ export function useBankingData(isAuthenticated, isSystemUser) {
     setIsRefreshing(true);
 
     try {
-      const [accountsResponse, transactionsResponse] = await Promise.all([
+      const [accountsResponse, targetsResponse, transactionsResponse] = await Promise.all([
         api.getAccounts({ all: isSystemUser }),
+        api.getTransferTargets(),
         api.getTransactions(),
       ]);
 
       const accountList = accountsResponse.accounts || accountsResponse || [];
+      const targetList = targetsResponse.accounts || targetsResponse || [];
       const transactionList = transactionsResponse.transactions || transactionsResponse || [];
 
       setAccounts(accountList);
+      setTransferTargets(targetList);
       setTransactions(transactionList);
 
       const balanceEntries = await Promise.all(
@@ -46,17 +50,30 @@ export function useBankingData(isAuthenticated, isSystemUser) {
     }
   }, [api, isAuthenticated, isSystemUser]);
 
+  const searchTransferTargets = useCallback(async (searchText) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const response = await api.getTransferTargets(searchText);
+      setTransferTargets(response.accounts || []);
+    } catch (fetchError) {
+      setError(fetchError.message || 'Unable to search accounts.');
+    }
+  }, [api, isAuthenticated]);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   return {
     accounts,
+    transferTargets,
     transactions,
     balances,
     isRefreshing,
     error,
     refresh,
+    searchTransferTargets,
     setError,
   };
 }
