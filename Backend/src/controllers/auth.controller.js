@@ -3,8 +3,6 @@ const jwt = require("jsonwebtoken")
 const emailService = require("../services/email.service")
 const tokenBlackListModel = require("../models/blackList.model")
 
-// (post) api/auth/register
-
 async function userRegisterController(req, res) {
     const { email, name, password } = req.body
 
@@ -32,6 +30,7 @@ async function userRegisterController(req, res) {
             _id: user._id,
             email: user.email,
             name: user.name,
+            systemUser: Boolean(user.systemUser),
         },
         token,
     })
@@ -39,11 +38,10 @@ async function userRegisterController(req, res) {
     await emailService.sendRegisterEmail(user.email, user.name)
 }
 
-// (post) api/auth/login
 async function userLoginController(req, res) {
     const { email, password } = req.body
 
-    const user = await userModel.findOne({ email }).select("+password")
+    const user = await userModel.findOne({ email }).select("+password +systemUser")
 
     if (!user) {
         return res.status(401).json({
@@ -68,23 +66,37 @@ async function userLoginController(req, res) {
             _id: user._id,
             email: user.email,
             name: user.name,
+            systemUser: Boolean(user.systemUser),
         },
         token,
     })
 
 }
 
+async function meController(req, res) {
+    const user = req.user
+
+    return res.status(200).json({
+        user: {
+            _id: user._id,
+            email: user.email,
+            name: user.name,
+            systemUser: Boolean(user.systemUser),
+        }
+    })
+}
+
 async function userLogoutController(req, res) {
     const token = req.cookies.token || req.headers.authorization?.split(" ")[1]
-    if (!token){
+    if (!token) {
         return res.status(200).json({
             message: "User Logged out Successfully"
         })
     }
 
-    res.cookie("token","")
+    res.cookie("token", "")
 
-    await tokenBlackListModel.create({token})
+    await tokenBlackListModel.create({ token })
 
     res.status(200).json({
         message: "User Logged out Successfully"
@@ -94,5 +106,6 @@ async function userLogoutController(req, res) {
 module.exports = {
     userRegisterController,
     userLoginController,
+    meController,
     userLogoutController,
 }
