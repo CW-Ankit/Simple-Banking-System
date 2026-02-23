@@ -8,6 +8,12 @@ const accountSchema = new mongoose.Schema({
         required: [true, "account must be associated with a user"],
         index: true,
     },
+    name: {
+        type: String,
+        trim: true,
+        maxlength: [80, "account name must be 80 characters or less"],
+        default: "Primary Account",
+    },
     status: {
         type: String,
         enum: {
