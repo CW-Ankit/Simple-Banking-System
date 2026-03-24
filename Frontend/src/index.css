@@ -13,7 +13,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background: radial-gradient(circle at top right, #dbeafe, transparent 40%), #f1f5f9;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 h1,
@@ -42,7 +42,7 @@ select {
 
 .auth-card {
   width: min(430px, 100%);
-  background: white;
+  background: #fff;
   border-radius: 16px;
   padding: 2rem;
   display: grid;
@@ -79,17 +79,27 @@ button {
   color: #fff;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease, background-color 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
 }
 
 button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 }
 
 .app-shell {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+}
+
+.mobile-nav {
+  display: none;
 }
 
 .sidebar {
@@ -99,6 +109,7 @@ button:disabled {
   flex-direction: column;
   gap: 1.2rem;
   padding: 1.7rem 1.1rem;
+  overflow-y: auto;
 }
 
 .brand {
@@ -138,6 +149,8 @@ button:disabled {
 .main-content {
   padding: 1.5rem;
   min-width: 0;
+  height: 100vh;
+  overflow: auto;
 }
 
 .topbar {
@@ -149,7 +162,7 @@ button:disabled {
 }
 
 .page-card {
-  background: white;
+  background: #fff;
   border-radius: 16px;
   padding: 1.2rem;
   box-shadow: 0 18px 42px -34px rgba(15, 23, 42, 0.5);
@@ -200,6 +213,7 @@ button:disabled {
   border-radius: 12px;
   padding: 1rem;
   background: #fff;
+  animation: fade-in 180ms ease-out;
 }
 
 .stat-card__label {
@@ -221,6 +235,13 @@ button:disabled {
   border-color: #fcd34d;
 }
 
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .account-card__id {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #475569;
@@ -228,8 +249,13 @@ button:disabled {
 }
 
 .account-card__owner {
-  margin-top: 0.45rem;
   font-weight: 600;
+}
+
+.account-meta {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
 }
 
 .account-card__balance {
@@ -311,26 +337,105 @@ td {
   font-weight: 600;
 }
 
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.row-actions button {
+  padding: 0.45rem 0.7rem;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.icon-button--small {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.account-more {
+  display: none;
+}
+
+.hide-sm {
+  display: table-cell;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.6;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 900px) {
   .app-shell {
-    grid-template-columns: 1fr;
+    display: block;
+  }
+
+  .mobile-nav {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.65rem 0.9rem;
+    background: #0f172a;
+    color: #fff;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .mobile-nav__title {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .mobile-nav .icon-button {
+    border-color: #334155;
+    color: #fff;
   }
 
   .sidebar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.9rem;
+    position: fixed;
+    inset: 3.35rem auto 0 0;
+    width: min(300px, 82vw);
+    transform: translateX(-103%);
+    transition: transform 180ms ease;
+    box-shadow: 0 20px 30px -20px rgba(15, 23, 42, 0.7);
+    z-index: 40;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
   }
 
   .sidebar__nav {
-    width: 100%;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .main-content {
-    padding: 1rem;
+    height: calc(100vh - 3.35rem);
+    padding: 1rem 0.85rem;
   }
 
   .page-card {
@@ -360,22 +465,35 @@ td {
     padding: 0.9rem;
   }
 
-  .sidebar {
-    padding: 1rem 0.85rem;
-  }
-
-  .sidebar__nav {
-    grid-template-columns: 1fr;
-  }
-
   .row-actions {
     flex-wrap: wrap;
+  }
+
+  .account-more {
+    display: inline-grid;
+  }
+
+  .account-meta {
+    display: none;
+  }
+
+  .account-meta--visible {
+    display: grid;
   }
 
   th,
   td {
     font-size: 0.82rem;
     padding: 0.6rem;
+  }
+
+  .hide-sm {
+    display: none;
+  }
+
+  .topbar p,
+  .account-card__id {
+    display: none;
   }
 
   .account-card__balance,
@@ -394,14 +512,4 @@ td {
   select {
     width: 100%;
   }
-}
-
-.row-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.row-actions button {
-  padding: 0.45rem 0.7rem;
 }

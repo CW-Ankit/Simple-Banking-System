@@ -44,21 +44,21 @@ export default function OverviewPage({ accounts, balances, transactions, isRefre
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th className="hide-sm">ID</th>
                   <th>Status</th>
                   <th>Amount</th>
-                  <th>Created</th>
+                  <th className="hide-sm">Created</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.slice(0, 6).map((item) => (
                   <tr key={item._id}>
-                    <td>{item._id}</td>
+                    <td className="hide-sm">{item._id}</td>
                     <td>
                       {(() => { const status = (item.status || 'pending').toLowerCase(); return <span className={`badge badge--${status}`}>{status}</span>; })()}
                     </td>
                     <td>${Number(item.amount || 0).toFixed(2)}</td>
-                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
+                    <td className="hide-sm">{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
                   </tr>
                 ))}
               </tbody>

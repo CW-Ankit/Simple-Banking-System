@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,10 +20,29 @@ const adminLinks = [
 export default function DashboardLayout() {
   const { userEmail, userName, isSystemUser, logout } = useAuth();
   const links = isSystemUser ? adminLinks : userLinks;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <header className="mobile-nav">
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Open navigation menu"
+          aria-expanded={isSidebarOpen}
+          onClick={() => setIsSidebarOpen((prev) => !prev)}
+        >
+          ☰
+        </button>
+        <p className="mobile-nav__title">{isSystemUser ? 'Banking Admin Desk' : 'Banking Desk'}</p>
+        <button type="button" className="icon-button" aria-label="Logout" onClick={logout}>
+          ⎋
+        </button>
+      </header>
+
+      <aside className={`sidebar ${isSidebarOpen ? 'sidebar--open' : ''}`}>
         <div className="brand">{isSystemUser ? 'Banking Admin Desk' : 'Banking Desk'}</div>
         <p className="sidebar__subtext">
           {isSystemUser ? 'System user controls enabled' : 'Secure, realtime money movement'}
@@ -35,6 +55,7 @@ export default function DashboardLayout() {
               to={link.to}
               end={link.to === '/dashboard'}
               className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`}
+              onClick={closeSidebar}
             >
               {link.label}
             </NavLink>
