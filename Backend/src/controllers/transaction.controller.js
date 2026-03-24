@@ -20,7 +20,23 @@ function buildAccountSummary(account) {
         userId: user ? user._id : normalized.user,
         userName: user ? user.name : undefined,
         userEmail: user ? user.email : undefined,
+        userSystemUser: Boolean(user?.systemUser),
         name: normalized.name,
+    }
+}
+
+function maskSystemAccountForRegularUser(accountSummary, requester) {
+    if (!accountSummary || requester?.systemUser || !accountSummary.userSystemUser) {
+        return accountSummary
+    }
+
+    return {
+        ...accountSummary,
+        userId: undefined,
+        userName: "Cash Deposit",
+        userEmail: undefined,
+        accountNumber: "Cash Deposit",
+        name: "Cash Deposit",
     }
 }
 
@@ -70,14 +86,20 @@ async function getTransactions(req, res) {
 
     const relatedAccounts = await accountModel
         .find({ _id: { $in: allAccountIds } })
-        .populate("user", "name email")
+        .populate("user", "name email +systemUser")
 
     const accountMap = new Map(relatedAccounts.map((account) => [account._id.toString(), account]))
 
     const enrichedTransactions = transactions.map((transaction) => ({
         ...transaction,
-        fromAccount: buildAccountSummary(accountMap.get(transaction.fromAccount.toString())),
-        toAccount: buildAccountSummary(accountMap.get(transaction.toAccount.toString())),
+        fromAccount: maskSystemAccountForRegularUser(
+            buildAccountSummary(accountMap.get(transaction.fromAccount.toString())),
+            req.user
+        ),
+        toAccount: maskSystemAccountForRegularUser(
+            buildAccountSummary(accountMap.get(transaction.toAccount.toString())),
+            req.user
+        ),
     }))
 
     return res.status(200).json({ transactions: enrichedTransactions })
