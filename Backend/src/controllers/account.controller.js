@@ -40,6 +40,7 @@ function formatAccount(accountDoc) {
             userId: account.user._id,
             userName: account.user.name,
             userEmail: account.user.email,
+            userSystemUser: Boolean(account.user.systemUser),
         }
     }
 
@@ -112,20 +113,16 @@ async function getUserAccountController(req, res) {
 async function getTransferTargetsController(req, res) {
     const { search = "" } = req.query
 
-    const allActiveAccounts = await accountModel.find({ status: "ACTIVE" }).populate("user", "name email")
+    const allActiveAccounts = await accountModel.find({ status: "ACTIVE" }).populate("user", "name email +systemUser")
 
     for (const account of allActiveAccounts) {
         await assignAccountNumberIfMissing(account)
     }
 
-    const myAccountIds = new Set(
-        (await accountModel.find({ user: req.user._id }).select("_id")).map((account) => account._id.toString())
-    )
-
     const mapped = allActiveAccounts.map(formatAccount)
     const visible = req.user.systemUser
         ? mapped
-        : mapped.filter((account) => !myAccountIds.has(account._id.toString()))
+        : mapped.filter((account) => !account.userSystemUser)
 
     const searchText = search.trim().toLowerCase()
     const filtered = searchText
