@@ -118,14 +118,8 @@ async function getTransferTargetsController(req, res) {
         await assignAccountNumberIfMissing(account)
     }
 
-    const myAccountIds = new Set(
-        (await accountModel.find({ user: req.user._id }).select("_id")).map((account) => account._id.toString())
-    )
-
     const mapped = allActiveAccounts.map(formatAccount)
-    const visible = req.user.systemUser
-        ? mapped
-        : mapped.filter((account) => !myAccountIds.has(account._id.toString()))
+    const visible = mapped
 
     const searchText = search.trim().toLowerCase()
     const filtered = searchText

@@ -34,14 +34,7 @@ export default function TransfersPage({
     return () => clearTimeout(timer);
   }, [search, onSearchTargets]);
 
-  const recipientAccounts = useMemo(() => {
-    if (isSystemUser) {
-      return targetAccounts;
-    }
-
-    const myIds = new Set(sourceAccounts.map((account) => account._id));
-    return targetAccounts.filter((account) => !myIds.has(account._id));
-  }, [isSystemUser, sourceAccounts, targetAccounts]);
+  const recipientAccounts = useMemo(() => targetAccounts, [targetAccounts]);
 
   const [transferForm, setTransferForm] = useState({
     fromAccount: '',
@@ -53,17 +46,27 @@ export default function TransfersPage({
     amount: '',
   });
 
-  useEffect(() => {
-    setTransferForm((prev) => ({
-      ...prev,
-      fromAccount: prev.fromAccount || sourceAccounts[0]?._id || '',
-    }));
+  const availableDestinationAccounts = useMemo(
+    () => recipientAccounts.filter((account) => account._id !== transferForm.fromAccount),
+    [recipientAccounts, transferForm.fromAccount],
+  );
 
-    setFundForm((prev) => ({
-      ...prev,
-      toAccount: prev.toAccount || (recipientAccounts[0]?.accountNumber || recipientAccounts[0]?._id || ''),
-    }));
+  useEffect(() => {
+      setTransferForm((prev) => ({
+        ...prev,
+        fromAccount: prev.fromAccount || sourceAccounts[0]?._id || '',
+      }));
+
+      setFundForm((prev) => ({
+        ...prev,
+        toAccount: prev.toAccount || (recipientAccounts[0]?.accountNumber || recipientAccounts[0]?._id || ''),
+      }));
   }, [sourceAccounts, recipientAccounts]);
+
+  useEffect(() => {
+    if (toAccountInput) return;
+    setToAccountInput(availableDestinationAccounts[0]?.accountNumber || availableDestinationAccounts[0]?._id || '');
+  }, [availableDestinationAccounts, toAccountInput]);
 
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
@@ -176,6 +179,25 @@ export default function TransfersPage({
 
           <label>
             To account number
+            <select
+              value={toAccountInput}
+              onChange={(event) => setToAccountInput(event.target.value)}
+              disabled={!availableDestinationAccounts.length}
+            >
+              {availableDestinationAccounts.length ? (
+                availableDestinationAccounts.map((account) => (
+                  <option key={account._id} value={account.accountNumber || account._id}>
+                    {recipientLabel(account)}
+                  </option>
+                ))
+              ) : (
+                <option value="">No destination accounts available</option>
+              )}
+            </select>
+          </label>
+
+          <label>
+            Or enter account number manually
             <input
               required
               value={toAccountInput}
