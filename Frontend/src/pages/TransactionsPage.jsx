@@ -22,12 +22,12 @@ export default function TransactionsPage({ transactions }) {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
+                <th className="hide-sm">ID</th>
                 <th>From</th>
                 <th>To</th>
                 <th>Status</th>
                 <th>Amount</th>
-                <th>Created</th>
+                <th className="hide-sm">Created</th>
               </tr>
             </thead>
             <tbody>
@@ -36,14 +36,14 @@ export default function TransactionsPage({ transactions }) {
 
                 return (
                   <tr key={item._id}>
-                    <td>{item._id}</td>
+                    <td className="hide-sm">{item._id}</td>
                     <td>{accountLabel(item.fromAccount)}</td>
                     <td>{accountLabel(item.toAccount)}</td>
                     <td>
                       <span className={`badge badge--${status}`}>{status}</span>
                     </td>
                     <td>${Number(item.amount || 0).toFixed(2)}</td>
-                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
+                    <td className="hide-sm">{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</td>
                   </tr>
                 );
               })}

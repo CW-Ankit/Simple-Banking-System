@@ -5,6 +5,7 @@ export default function AccountsPage({ accounts, balances, onCreateAccount, onRe
   const [name, setName] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [busyId, setBusyId] = useState('');
+  const [openInfoId, setOpenInfoId] = useState('');
 
   const submitCreate = async (event) => {
     event.preventDefault();
@@ -67,9 +68,23 @@ export default function AccountsPage({ accounts, balances, onCreateAccount, onRe
         <div className="accounts-grid">
           {accounts.map((account) => (
             <article key={account._id} className="account-card">
-              <p className="account-card__id">{account._id}</p>
-              <p className="account-card__owner">{account.name || 'Primary account'}</p>
-              <p className="sidebar__subtext">{account.userName || account.ownerName || account.userEmail}</p>
+              <div className="card-header">
+                <p className="account-card__owner">{account.name || 'Primary account'}</p>
+                <button
+                  type="button"
+                  className="icon-button icon-button--small account-more"
+                  aria-label="Show account details"
+                  onClick={() => setOpenInfoId((prev) => (prev === account._id ? '' : account._id))}
+                >
+                  ⋮
+                </button>
+              </div>
+
+              <div className={`account-meta ${openInfoId === account._id ? 'account-meta--visible' : ''}`}>
+                <p className="account-card__id">{account._id}</p>
+                <p className="sidebar__subtext">{account.userName || account.ownerName || account.userEmail}</p>
+              </div>
+
               <p className="account-card__balance">
                 {typeof balances[account._id] === 'number' ? `$${balances[account._id].toFixed(2)}` : 'Balance unavailable'}
               </p>
